@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/derrtaderr/revenue-sync/schema/account-model.v1.json",
+  "title": "revenue-sync account model, version 1",
+  "description": "One record per HubSpot company with its Stripe and usage sources and every metric from src/definitions.mjs, plus every record that was refused and why. Documented in docs/account-model.md.",
+  "type": "object",
+  "required": ["schema", "version", "generated_at", "as_of", "sources", "accounts", "unmatched", "ambiguous", "input_problems"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "type": "string", "enum": ["revenue-sync.account-model"] },
+    "version": { "type": "integer", "enum": [1] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "as_of": { "type": "string", "description": "YYYY-MM-DD; usage windows end on this date" },
+    "sources": {
+      "type": "object",
+      "required": ["stripe", "usage", "hubspot"],
+      "additionalProperties": false,
+      "properties": {
+        "stripe": {
+          "type": "object",
+          "required": ["customers", "subscriptions", "open_invoices"],
+          "additionalProperties": false,
+          "properties": {
+            "customers": { "type": "integer" },
+            "subscriptions": { "type": "integer" },
+            "open_invoices": { "type": "integer" }
+          }
+        },
+        "usage": {
+          "type": "object",
+          "required": ["accounts"],
+          "additionalProperties": false,
+          "properties": { "accounts": { "type": "integer" }, "provided": { "type": "boolean", "description": "false when no usage file was given; usage properties are then left untouched" }, "source": { "type": "string", "enum": ["csv", "bigquery"], "description": "where usage was read from, when it was read" } }
+        },
+        "billing": {
+          "type": "object",
+          "description": "Which billing source ran. Added within version 1. The stripe counts above are this source's counts.",
+          "required": ["source"],
+          "additionalProperties": false,
+          "properties": { "source": { "type": "string", "enum": ["stripe", "bigquery"] } }
+        },
+        "mapping": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "provided": { "type": "boolean", "description": "false when no mapping file was given" } }
+        },
+        "hubspot": {
+          "type": "object",
+          "required": ["companies"],
+          "additionalProperties": false,
+          "properties": { "companies": { "type": "integer" } }
+        }
+      }
+    },
+    "accounts": { "type": "array", "items": { "$ref": "#/$defs/account" } },
+    "unlinked": {
+      "type": "array",
+      "description": "Companies that hold revenue-sync values but that no record resolves to any more. sync clears them.",
+      "items": {
+        "type": "object",
+        "required": ["hubspot_company_id", "hubspot_company_name", "reason", "cleared"],
+        "additionalProperties": false,
+        "properties": {
+          "hubspot_company_id": { "type": "string" },
+          "hubspot_company_name": { "type": "string" },
+          "reason": { "type": "string" },
+          "cleared": { "type": "boolean" },
+          "held": { "type": ["string", "null"], "description": "why this run will not clear it, or null" }
+        }
+      }
+    },
+    "unlink_guard": {
+      "type": "object",
+      "description": "Whether sync may unlink this run. ok false means sync refuses and writes nothing.",
+      "required": ["ok", "linked", "would_unlink", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "ok": { "type": "boolean" },
+        "linked": { "type": "integer" },
+        "would_unlink": { "type": "integer" },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+    "unmatched": { "type": "array", "items": { "$ref": "#/$defs/refusal" } },
+    "ambiguous": { "type": "array", "items": { "$ref": "#/$defs/ambiguous" } },
+    "input_problems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "line", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "file": { "type": "string", "enum": ["usage", "mapping"] },
+          "line": { "type": "integer" },
+          "reason": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "account": {
+      "type": "object",
+      "required": ["hubspot_company_id", "hubspot_company_name", "domain", "stripe_customer_ids", "usage_account_ids", "matched_by", "metrics", "blocked", "flags"],
+      "additionalProperties": false,
+      "properties": {
+        "hubspot_company_id": { "type": "string" },
+        "hubspot_company_name": { "type": "string" },
+        "domain": { "type": ["string", "null"] },
+        "stripe_customer_ids": { "type": "array", "items": { "type": "string" } },
+        "usage_account_ids": { "type": "array", "items": { "type": "string" } },
+        "matched_by": { "type": "object", "additionalProperties": { "type": "string", "enum": ["domain", "mapping"] } },
+        "metrics": { "$ref": "#/$defs/metrics" },
+        "blocked": { "type": "array", "items": { "type": "string" } },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["code", "detail"],
+            "additionalProperties": false,
+            "properties": {
+              "code": { "type": "string", "enum": ["mixed_currency", "unsupported_price", "unsupported_discount", "unsupported_currency", "tax_inclusive_price", "truncated_items"] },
+              "detail": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": ["mrr", "arr", "currency", "outstanding_amount", "plan", "billing_status", "renewal_date", "seat_count", "active_users_30d", "usage_trend"],
+      "additionalProperties": false,
+      "properties": {
+        "mrr": { "type": ["number", "null"] },
+        "arr": { "type": ["number", "null"] },
+        "currency": { "type": ["string", "null"] },
+        "outstanding_amount": { "type": ["number", "null"] },
+        "plan": { "type": ["string", "null"] },
+        "billing_status": { "type": "string", "enum": ["unpaid", "past_due", "active", "canceling", "trialing", "paused", "canceled", "none"] },
+        "renewal_date": { "type": ["string", "null"] },
+        "seat_count": { "type": ["integer", "null"] },
+        "active_users_30d": { "type": ["integer", "null"] },
+        "usage_trend": { "type": ["string", "null"], "enum": ["up", "down", "flat", "new", "none", null] }
+      }
+    },
+    "refusal": {
+      "type": "object",
+      "required": ["source", "source_id", "label", "domain", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "source": { "type": "string", "enum": ["stripe", "usage"] },
+        "source_id": { "type": "string" },
+        "label": { "type": "string" },
+        "domain": { "type": ["string", "null"] },
+        "reason": { "type": "string" }
+      }
+    },
+    "ambiguous": {
+      "type": "object",
+      "required": ["source", "source_id", "label", "domain", "reason", "candidates"],
+      "additionalProperties": false,
+      "properties": {
+        "source": { "type": "string", "enum": ["stripe", "usage"] },
+        "source_id": { "type": "string" },
+        "label": { "type": "string" },
+        "domain": { "type": ["string", "null"] },
+        "reason": { "type": "string" },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name"],
+            "additionalProperties": false,
+            "properties": { "id": { "type": "string" }, "name": { "type": "string" } }
+          }
+        }
+      }
+    }
+  }
+}

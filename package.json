@@ -1,0 +1,29 @@
+{
+  "name": "revenue-sync",
+  "version": "0.1.0",
+  "description": "Stripe billing and product usage on the HubSpot company, reconciled. Runs on your side, zero dependencies.",
+  "type": "module",
+  "bin": {
+    "revenue-sync": "bin/revenue-sync.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "schema/",
+    "docs/account-model.md",
+    "docs/metrics.md",
+    "docs/warehouse.md",
+    "examples/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.6"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "lint": "node scripts/lint.mjs",
+    "gen": "node scripts/gen.mjs",
+    "gen:check": "node scripts/gen.mjs --check"
+  },
+  "license": "MIT"
+}
