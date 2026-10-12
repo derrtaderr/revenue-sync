@@ -1,0 +1,43 @@
+# The exhibit at the top of the README, rendered by demo-agent, the maker's own exhibit tool
+# (private to the maker, not something a reader needs). Readers run the demo itself.
+#
+# The no-key demo seeds fictional Stripe and HubSpot data and syncs it, someone edits one company
+# by hand in HubSpot, and reconcile catches the edit, naming the company and both numbers. The
+# demo pauses on that catch (HOLD_MS in scripts/demo.mjs), then runs plan, sync and a passing
+# reconcile. Every character on screen is the real output of scripts/demo.mjs, which runs the
+# real CLI against the in-process stand-ins the tests use. No keys, no network, and every company
+# named is fictional. Beats arrive one at a time because the demo paces itself.
+#
+# cwd.ref is pinned to a commit on the private dev repo (tag exhibit-row125-v2), so the exhibit
+# shows exactly the code that commit holds and a re-render needs access to that repo. The public
+# release keeps this pin; the commit's demo output is the one exhibit.json records. Render with
+# the flags in docs/demo/exhibit.json ("render"). redaction.roster.json allows one domain,
+# gmail.com, which the demo names in a refusal message and is not anyone's address.
+#
+# When the demo's output changes, move ref to a commit holding the new demo, re-render, and update
+# exhibit.json (the GIF's sha256, the commit, the output) in the same commit as the README.
+# test/above-fold.test.mjs fails until then: it re-checks the expect below, the catch fitting the
+# terminal, the hold surviving maxPauseMs, and the manifest against what the demo prints today.
+
+title: revenue-sync catches a hand edit in HubSpot
+
+terminal:
+  cols: 80
+  rows: 20
+
+pace:
+  cpsFloor: 32
+  cpsCeiling: 58
+  maxPauseMs: 2500
+
+scenes:
+  - command: node scripts/demo.mjs
+    cwd:
+      repo: https://github.com/derrtaderr/revenue-sync-dev
+      ref: 4d8a496192e20557988ae6e278a14948474b12a6
+    expect:
+      exitCode: 0
+      output: "MRR \\(rs_mrr\\): HubSpot says 1500, billing says 1300"
+    zoom: none
+    dwell: 3
+    caption: a hand edit in HubSpot, caught by reconcile with both numbers

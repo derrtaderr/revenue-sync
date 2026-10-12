@@ -1,5 +1,17 @@
 # revenue-sync
 
+Stripe billing and product usage, or your warehouse, written to the HubSpot company and reconciled against the source.
+
+![A hand edit in HubSpot caught by reconcile, which names the company and both numbers, then synced back](docs/demo/revenue-sync.gif)
+
+```bash
+git clone https://github.com/derrtaderr/revenue-sync
+cd revenue-sync
+node scripts/demo.mjs
+```
+
+The demo needs no keys and runs the real CLI against stand-ins for Stripe and HubSpot. A real run needs a Stripe test key and a HubSpot token, set up in the five minute quickstart below.
+
 Ask "is this account healthy, when does it renew, how much do they pay, are they using it" at a B2B SaaS company on HubSpot and Stripe, and the answer lives in three tabs: the Stripe dashboard, a product usage export, and the HubSpot company. The numbers in HubSpot were typed in at close and have drifted since. Nobody can tell which number is right, so every renewal call starts with an argument about the data.
 
 revenue-sync puts billing and usage on the HubSpot company, computed from one definitions file, and then checks them. `reconcile` re-reads HubSpot and fails, naming every company and both numbers, whenever the CRM disagrees with what billing says. It runs on your machine with your own keys, needs no data warehouse (and reads BigQuery if you have one, checking the warehouse against Stripe), and has zero dependencies.
@@ -39,11 +51,7 @@ Reconcile failed. Run plan to see the writes that would fix this, then sync.
 
 You need Node 20.6 or newer (for `--env-file`), a Stripe account, and a HubSpot portal where you may create a private app or service key. Use a Stripe **sandbox** and, ideally, a HubSpot **test or developer portal**: `seed --hubspot` creates ten fictional companies there.
 
-1. **Clone it.** There is nothing to install.
-   ```bash
-   git clone https://github.com/derrtaderr/revenue-sync
-   cd revenue-sync
-   ```
+1. **Clone it** with the first two lines of the block at the top. There is nothing to install.
 2. **Get a Stripe test key.** In the Stripe dashboard, open your sandbox, then Developers, then API keys, and copy the secret key (it starts `sk_test_`). `seed` refuses any key that does not start `sk_test_` or `rk_test_`.
 3. **Get a HubSpot token.** Settings, then Development (or Integrations), then create a service key or private app with these four scopes: `crm.objects.companies.read`, `crm.objects.companies.write`, `crm.schemas.companies.read`, `crm.schemas.companies.write`. Copy the token (it starts `pat-`).
 4. **Put both in a `.env` file** in the repo folder. `.env` is gitignored. Replace each placeholder with your real value; as shown, the tool rejects them on purpose.

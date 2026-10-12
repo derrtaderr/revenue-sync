@@ -1,0 +1,14 @@
+{
+  "gif": "revenue-sync.gif",
+  "gifSha256": "f6909b10ed15134e594552caf0d7d61ba2d60cad1150237eefe255c7a0de9466",
+  "renderedFrom": "4d8a496192e20557988ae6e278a14948474b12a6",
+  "render": "demo-agent run docs/demo/storyboard.yaml --roster docs/demo/redaction.roster.json --gif-width 880 --gif-fps 8",
+  "qc": {
+    "ok": true,
+    "seconds": 10.75,
+    "expectMatched": true,
+    "boundsOk": true,
+    "redactionOk": true
+  },
+  "output": "revenue-sync demo, the real CLI on stand-ins for Stripe and HubSpot.\nNo keys, nothing leaves this machine. Key lines of each step shown.\n\n$ node bin/revenue-sync.mjs seed --hubspot\nCreated 10 HubSpot companies.\nexit 0\n$ node bin/revenue-sync.mjs sync --usage usage.csv\nWrote 71 values to HubSpot.\nexit 0\n\nSomeone edits Northwind Analytics by hand in HubSpot.\n\n$ node bin/revenue-sync.mjs reconcile --usage usage.csv\n2 values disagree across 1 company.\n\nNorthwind Analytics (HubSpot 100)\n  MRR (rs_mrr): HubSpot says 1500, billing says 1300\n  Seats (rs_seat_count): HubSpot says 30, billing says 25\n\nReconcile failed. Run plan to see the writes that would fix this, then sync.\nexit 3\n\n$ node bin/revenue-sync.mjs plan --usage usage.csv\nNorthwind Analytics (HubSpot 100)\n  rs_mrr: 1500 → 1300 (edited in HubSpot since the last sync)\n  rs_seat_count: 30 → 25 (edited in HubSpot since the last sync)\n2 writes across 1 company.\nexit 0\n$ node bin/revenue-sync.mjs sync --usage usage.csv\nWrote 2 values to HubSpot.\nexit 0\n$ node bin/revenue-sync.mjs reconcile --usage usage.csv\nChecked values agree: 8 companies, 77 values. Not checked: 1 flagged company, 2 unmatched records, 2 ambiguous records. Exit 0; --strict makes these fail.\n"
+}

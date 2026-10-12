@@ -626,6 +626,17 @@ confirmation.
     message, as BigQuery users report it; it is not from Google's reference docs and has not been
     seen live by this tool, so a reworded message falls back to the roles hint.
 
+35. **A no-key demo is added, as a script beside the tests rather than a CLI command**. The brief
+    asked for the shortest working command, and to use a no-key demo mode if one existed. None did,
+    since every command reads Stripe and HubSpot. `scripts/demo.mjs` runs the real CLI entry point
+    (`src/cli.mjs` `main`) against the in-process Stripe and HubSpot stand-ins the test suite already
+    uses, in a fresh temporary folder that it removes afterwards. It seeds, syncs, edits one company
+    by hand in the fake HubSpot, and shows `reconcile` catching it (exit 3), then `plan` showing the fix and `sync` putting it
+    back and `reconcile` passing. A `revenue-sync demo` command would need the stand-ins shipped in
+    `src/` and the npm package, about 370 lines of fake API that a production install never runs, so
+    the demo stays a clone-and-run script and is not in the package `files`. The cost is that
+    `npx github:derrtaderr/revenue-sync` cannot run it; the shortest command is a clone.
+
 ## Questions the author didn't ask
 
 **Does `rs_mrr` match the MRR in Stripe Billing's own dashboard?** For an account with nothing
@@ -886,6 +897,34 @@ the next source, behind the same interface and the same row contract. Not built 
 
 Each file joins the per-area gates table below in the commit that creates it.
 
+## Above the fold
+
+A stranger arriving from a profile link reads the first screen and decides. The first screen holds,
+in this order and before anything else, the one-line promise, a terminal GIF of the real CLI on
+demo data, and the shortest working command in one code block, with one line under it saying what
+needs keys. Everything that was there before keeps its place below.
+
+- **The promise.** One sentence naming the inputs (Stripe billing and product usage, or a
+  warehouse), the destination (the HubSpot company) and the check (reconciled against the source).
+- **The GIF.** Rendered by demo-agent (the maker's own exhibit tool, private to the maker; readers
+  only ever run the demo) from `docs/demo/storyboard.yaml`, which runs the demo command in a fresh
+  clone, checks its exit code and output against the storyboard's `expect`, and refuses to render
+  on a miss. The demo paces itself, so the beats arrive one at a time (seed, sync, the hand edit,
+  reconcile), and it holds longest on the beat a buyer cares about, `reconcile` naming the company
+  and both numbers with exit 3. Then `plan` shows the fixing writes, as `reconcile` advises, and
+  `sync` and a passing `reconcile` follow. Each step shows `node bin/revenue-sync.mjs ...`, the
+  command a cloned user types. Under 15 seconds and under 5 MB. It and its storyboard live in
+  `docs/demo/`, outside the package `files`.
+- **The command.** `node scripts/demo.mjs` after a clone (divergence 35). No keys, no network, no
+  install. The quickstart's own clone step points back at it rather than repeating it.
+- **Pinned by a test.** `test/above-fold.test.mjs` fails when the first lines of the README stop
+  holding the promise, the image, and the command block in that order; when the image file is
+  missing or 5 MB or larger; when the block's command is not the one the test runs; or when the
+  storyboard's `expect` no longer matches what the demo prints. The README, the GIF and that test
+  change in the same commit.
+- **Prior art.** No earlier above-the-fold or GIF work on this repo. demo-agent is the maker's house
+  tool for terminal exhibits (private), so the GIF comes from it rather than a screen recorder.
+
 ## Per-area gates
 
 Each area has a cheap gate: the test subset for that area, plus lint. The whole-repo gate runs
@@ -912,6 +951,8 @@ table names a file that does not exist.
 | Warehouse docs, examples, packaging | `node --test test/warehouse.test.mjs test/readme.test.mjs test/package.test.mjs && npm run lint` |
 | Cross-source reconcile | `node --test test/cross-source.test.mjs test/warehouse-e2e.test.mjs` |
 | Warehouse end to end, unlink identity | `node --test test/warehouse-e2e.test.mjs test/contract.test.mjs` |
+| Demo (no keys, stand-ins) | `node --test test/demo.test.mjs` |
+| README above the fold, exhibit freshness | `node --test test/above-fold.test.mjs test/readme.test.mjs && npm run lint` |
 | CLI, end to end, README, secrets | `node --test test/cli.test.mjs test/bin.test.mjs test/e2e.test.mjs test/readme.test.mjs test/token-leak.test.mjs && npm run gen:check` |
 | Whole repo | `npm test && npm run lint && npm run gen:check` |
 
