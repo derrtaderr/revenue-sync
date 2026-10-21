@@ -12,13 +12,21 @@ import { HOLD_MS } from '../scripts/demo.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const README = readFileSync(join(ROOT, 'README.md'), 'utf8');
-const FOLD = 15; // lines a stranger sees before scrolling
+// The README opens with an HTML header (wordmark, promise, badges, exhibit), whose markup spends
+// raw lines that render as four blocks, so the cap is on raw lines and allows for that markup. What
+// it guards is unchanged: nothing but the header comes before the command.
+const FOLD = 30; // raw lines before the command block must close
 const PUBLIC = 'https://github.com/derrtaderr/revenue-sync';
 
 function aboveFold() {
   const lines = README.split('\n');
-  const nonEmpty = lines.map((l, i) => [l, i]).filter(([l]) => l.trim());
-  const [title, promise, image, fence] = nonEmpty;
+  const at = (re) => lines.findIndex((l) => re.test(l));
+  const titleAt = at(/<img src="[^"]+-wordmark-light\.png"/);
+  const promiseAt = lines.findIndex((l) => l.trim() && !l.trim().startsWith('<'));
+  const imageAt = at(/<img src="[^"]+\.gif"/);
+  const fenceAt = at(/^```/);
+  const at2 = (i) => (i >= 0 ? [lines[i], i] : undefined);
+  const [title, promise, image, fence] = [titleAt, promiseAt, imageAt, fenceAt].map(at2);
   const close = lines.indexOf('```', fence?.[1] + 1);
   return { lines, title, promise, image, fence, close, block: lines.slice(fence?.[1] + 1, close) };
 }
@@ -35,17 +43,30 @@ const runDemo = (command) => {
   return spawnSync(process.execPath, args, { cwd: ROOT, env: { PATH: process.env.PATH, REVENUE_SYNC_DEMO_PACE_MS: '0' }, encoding: 'utf8' });
 };
 
-test('the README opens with the title, then the one-line promise', () => {
-  const { title, promise } = aboveFold();
-  assert.equal(title[0], '# revenue-sync');
+test('the README opens with the title (the wordmark, light and dark), then the one-line promise', () => {
+  const { lines, title, promise } = aboveFold();
+  assert.ok(title, 'the README opens with a wordmark image');
+  assert.match(title[0], /alt="revenue-sync"/);
+  const before = lines.slice(0, title[1]).filter((l) => l.trim());
+  assert.ok(before.every((l) => /^\s*<(p align="center"|picture|source )/.test(l)), `only the wordmark markup precedes the title: ${before}`);
+  const dark = /<source media="\(prefers-color-scheme: dark\)" srcset="([^"]+-wordmark-dark\.png)">/.exec(before.join('\n'));
+  assert.ok(dark, 'a dark wordmark for dark mode');
+  for (const f of [dark[1], /src="([^"]+)"/.exec(title[0])[1]]) {
+    assert.ok(existsSync(join(ROOT, f)), f);
+    assert.equal(readFileSync(join(ROOT, f)).subarray(1, 4).toString('latin1'), 'PNG', f);
+  }
+  assert.ok(promise[1] > title[1], 'the promise comes after the title');
   for (const w of ['Stripe billing', 'product usage', 'warehouse', 'HubSpot', 'reconciled']) assert.ok(promise[0].includes(w), w);
   assert.doesNotMatch(promise[0], /[—:]/, 'no em dash or colon in the promise');
 });
 
 test('then the exhibit, a GIF in the repo under 5 MB', () => {
-  const { image } = aboveFold();
-  const m = /^!\[[^\]]+\]\(([^)]+\.gif)\)$/.exec(image[0]);
-  assert.ok(m, `the second thing is an image: ${image[0]}`);
+  const { lines, promise, image, fence } = aboveFold();
+  assert.ok(image && image[1] > promise[1], 'the exhibit comes after the promise');
+  const m = /<img src="([^"]+\.gif)" alt="[^"]+"/.exec(image[0]);
+  assert.ok(m, `the exhibit is an image with alt text: ${image[0]}`);
+  const between = lines.slice(promise[1] + 1, fence[1]).filter((l) => l.trim());
+  assert.ok(between.every((l) => l.trim().startsWith('<')), `only the badges and the exhibit sit between the promise and the command: ${between}`);
   const file = join(ROOT, m[1]);
   assert.ok(existsSync(file), m[1]);
   assert.ok(statSync(file).size < 5_000_000, `${m[1]} is ${statSync(file).size} bytes`);

@@ -1,8 +1,23 @@
-# revenue-sync
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/demo/revenue-sync-wordmark-dark.png">
+    <img src="docs/demo/revenue-sync-wordmark-light.png" alt="revenue-sync" width="520">
+  </picture>
+  <br>
+  Stripe billing and product usage, or your warehouse, written to the HubSpot company and reconciled against the source.
+</p>
 
-Stripe billing and product usage, or your warehouse, written to the HubSpot company and reconciled against the source.
+<p align="center">
+  <img src="https://img.shields.io/badge/node-%E2%89%A520.6-339933?logo=nodedotjs&logoColor=white" alt="Node 20.6 or newer">
+  <img src="https://img.shields.io/badge/dependencies-0-F97316" alt="Zero dependencies">
+  <img src="https://img.shields.io/badge/demo-no%20keys-8B949E" alt="Demo needs no keys">
+</p>
 
-![A hand edit in HubSpot caught by reconcile, which names the company and both numbers, then synced back](docs/demo/revenue-sync.gif)
+<p align="center">
+  <a href="#five-minute-quickstart">
+    <img src="docs/demo/revenue-sync.gif" alt="A hand edit in HubSpot caught by reconcile, which names the company and both numbers, then synced back" width="760">
+  </a>
+</p>
 
 ```bash
 git clone https://github.com/derrtaderr/revenue-sync
